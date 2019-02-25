@@ -62,7 +62,7 @@ data <- kobo_split_multiple(data.or, dico)
 
 
 #remove columns with all NA
-data <- household[colSums(!is.na(data)) > 0]
+data <- data[colSums(!is.na(data)) > 0]
 
 
 ## We now save a back up in the data folder to be used for the Rmd  ###############
@@ -102,21 +102,29 @@ questions <- questions[ !(is.na(questions$theme)) , c("name", "theme", "concept"
 questions <- merge( x = questions, y = dico[dico$type %in% c("select_multiple_d", "select_one") ,
                                             c("name", "fullname", "label", "type")], by = "name", allx = TRUE)
 
+questions$maxscore <- 0
 ## Checking what type of questions we have
 questions$type <- as.character(questions$type)
 levels(as.factor(questions$type))
 
+## Small function used later in case a modality is not used
+intersect_all <- function(a,b,...){
+  Reduce(intersect, list(a,b,...))
+}
+
+## initialise score dataframe
+scores <- data.frame(operation = as.character("test"),
+                     indicator = as.character("test"),
+                     score = 0,
+                     stringsAsFactors = FALSE)
 
 
 
-## Variable to be kep for scoring
-
-household2 <- household[ c("")]
 
 
 ## Now compile indicators for each country
 for (i in 1:nrow(questions)) {
-   #i <- 4
+  # i <- 41
   questionname <- as.character(questions[ i, c("fullname")])
   questionlabel <- as.character(questions[ i, c("label")])
   questiontype <- as.character(questions[ i, c("type")])
@@ -125,39 +133,86 @@ for (i in 1:nrow(questions)) {
   ### Now subset all variables modalities with the matching questions names
   ## case indicator is a select_one
   if (questiontype == "select_one") {
-    dicovar <- as.character(dico[dico$type == "select_one_d" & grepl(questionname,dico$fullname ), c("fullname") ])
+    dicovar <- as.character(dico[dico$type == "select_one" & grepl(questionname,dico$fullname ), c("fullname") ])
+
+    ## Subset this question
+    dataquest <- as.data.frame(data[ , dicovar])
+    names(dataquest)[1] <- questionname
+    ## Create one column per modalities for this question
+    modalities <- as.data.frame(levels(as.factor(as.character(dataquest[ ,1]))))
+    if (nrow(modalities) > 1 ) {
+      for (h in 1:nrow(modalities)) {
+        # h <-1
+        modal <- as.character(modalities[ h , 1])
+        dataquest[ , h + 1] <- ifelse(dataquest[ ,  1] == modal, 1, 0)
+        names(dataquest)[h + 1] <- paste0(questionname, ".", modal)
+      }
+
+
+      datascored <- as.data.frame(data$intro.Operation)
+      datascored[ , 2] <-  questionname
+      datascored[ , 3] <-  0
+      names(datascored)[1] <- "operation"
+      names(datascored)[2] <- "indicator"
+      names(datascored)[3] <- "score"
+      ## Apply the score for the respective modalities
+      for (k in 2:ncol(dataquest)) {
+        # k <- 2
+        fulname1 <- names(dataquest)[k]
+        scorefullnames1 <- dico[ dico$fullname == fulname1 , c("score")]
+
+        datascored[ , k + 2 ] <- ifelse( dataquest[ , k - 1] == 1,  1 * scorefullnames1 , 0)
+        datascored[ , 3] <- datascored[ , 3] + datascored[ , k + 2 ]
+      }
+      scores <- rbind(scores, datascored[ , 1:3] )
+
+      ## Get the maximum score to append to main table
+      maxscore <- max(datascored[ , 3])
+      questions[questions$fullname == questionname , c("maxscore")] <- maxscore
+
+      rm(datascored)
+    }
+
+
   } else {
+
     ## case  indicator is a select_multiple
     dicovar <- as.character(dico[dico$type == "select_multiple" & grepl(questionname,dico$fullname ), c("fullname") ])
-  }
 
-  dataquest <- data[ , dicovar]
+    #check first that those modalities were actually used in the dataset
+    dicodata <- as.character(names(data))
+    dicovar2 <- intersect_all(dicovar, dicodata)
 
-  ## Now compile the score using the scores recorded in the dictionnary
+    ## case there's no data at all -- ie. dicovar2 is empty
+    if ( !identical(dicovar2, character(0)) ) {
 
+        ## Select all modalities for this question
+        dataquest <- data[ , dicovar2]
 
-  for (j in 1:nrow(data)) {
-    # j <- 1
-    operation <- as.character(data[j, c("intro.Operation")])
+        datascored <- as.data.frame(data$intro.Operation)
+        datascored[ , 2] <-  questionname
+        datascored[ , 3] <-  0
+        names(datascored)[1] <- "operation"
+        names(datascored)[2] <- "indicator"
+        names(datascored)[3] <- "score"
+        ## Apply the score for the respective modalities
+        for (j in 1:ncol(dataquest)) {
+          # j <- 1
+          fulname1 <- names(dataquest)[j]
+          scorefullnames1 <- dico[ dico$fullname == fulname1 , c("score")]
 
-    cat(paste0( i, "- ",questionlabel, "-", j, "-", operation, "\n" ))
+          datascored[ , j + 3 ] <- ifelse( dataquest[, j] == 1,  1 * scorefullnames1 , 0)
+          datascored[ , 3] <- datascored[ , 3] + datascored[ , j + 3 ]
+        }
+        scores <- rbind(scores, datascored[ , 1:3] )
 
-    for (h in 1:ncol(data)) {
-       # names(data)
-       # h <-
-      #stringdist_join(x = questionname, y = names(data), by = "fullname", mode = "left", max_dist = 2)
+        ## Get the maximum score to append to main table
+        maxscore <- max(datascored[ , 3])
+        questions[questions$fullname == questionname , c("maxscore")] <- maxscore
 
-
-
-      allcolumn <- dplyr::filter(data, !grepl(questionname,names(data)))
-      str(names(data))
-      str(names(data))
-
-      if ( data[j , h] == questionname ) {
-
-
-      }
+        rm(datascored)
     }
+
   }
 
 }
