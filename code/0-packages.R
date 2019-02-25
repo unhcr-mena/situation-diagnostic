@@ -236,7 +236,7 @@ packages <- unique(sort(c(
  "psych",  #A package for personality, psychometric, and psychological research
  "nFactors", ## Manipulate results of factor modeling
  "moments", ## Moments, cumulants, skewness, kurtosis and related tests
- "clusterSim", ## Searching for Optimal Clustering Procedure for a Data Set
+ #"clusterSim", ## Searching for Optimal Clustering Procedure for a Data Set
  "mice", # Multivariate Imputation by Chained Equations
  "VIM", # Visualization and Imputation of Missing Values
  "REdaS", # Companion Package to the Book 'R: Einfhrung durch angewandte Statistik'
