@@ -252,90 +252,95 @@ scores.full$test <- (scores.full$score - scores.full$mean) / scores.full$std
 
 ## concatenate name
 scores.full$newname <- paste0(scores.full$theme, "_", scores.full$name)
+questions$newname <- paste0(questions$theme, "_", questions$name)
 
+
+## coefficient of variation (CV= Standard Deviation/Mean)
+questions$variation.coeff1 <- questions$std/questions$mean
+questions$variation.coeff <- paste0(round(questions$std/questions$mean*100, 2), " %")
 
 ## Backup for report
 write.csv(scores.full,"data/scorefull.csv", row.names = FALSE, na = "")
 write.csv(questions,"data/questions.csv", row.names = FALSE, na = "")
 
-levels(as.factor(scores.full$concept))
-
-### Compile for Cronbach alpha #########
-scores.wide <- scores.full[ !is.na(scores.full$scaled.score)  , ]
-scores.wide <- dcast(scores.wide, operation  ~ newname, value.var = "scaled.score", sum)
-row.names(scores.wide ) <- scores.wide$operation
-scores.wide$operation <- NULL
-Cronbach <- alpha(scores.wide, check.keys = TRUE)
-
-
-### Compile summary score per sector
-
-themes.op <- as.data.frame(data$intro.Operation)
-themes <- as.data.frame(unique(questions$theme))
-for (i in 1:nrow(themes)) {
-  # i <- 2
-  theme.this <- as.character(themes[ i, 1])
-  ## subset
-  scores.this <- scores.full[ !is.na(scores.full$scaled.score) & scores.full$theme == theme.this , ]
-
-  ## go from long to wide
-  scores.this.wide <- dcast(scores.this, operation  ~ newname, value.var = "scaled.score", sum)
-
-  ## put operation name as row.names
-  row.names(scores.this.wide ) <- scores.this.wide$operation
-  scores.this.wide$operation <- NULL
-
-  ## Compile the score for the theme
-  themes.op[ , i + 1] <- rowSums(scores.this.wide, na.rm = TRUE, dims = 1)  / ncol(scores.this.wide)
-  ## sclae it
-  #themes.op[ , i + 1] <- round(scale(themes.op[ , i + 1],
-  #                             center = min(themes.op[ , i + 1]),
-  #                             scale = max(themes.op[ , i + 1]) - min(themes.op[ , i + 1])) , 2)
-  names(themes.op)[i + 1] <- theme.this
-
-  ## save with different name
-  assign(  paste("scores.", theme.this, sep = ""), scores.this.wide )
-  rm(scores.this, theme.this,scores.this.wide )
-
-}
+# levels(as.factor(scores.full$concept))
+#
+# ### Compile for Cronbach alpha #########
+# scores.wide <- scores.full[ !is.na(scores.full$scaled.score)  , ]
+# scores.wide <- dcast(scores.wide, operation  ~ newname, value.var = "scaled.score", sum)
+# row.names(scores.wide ) <- scores.wide$operation
+# scores.wide$operation <- NULL
+# #Cronbach <- alpha(scores.wide, check.keys = TRUE)
 
 
-##### Step : subsetting by concept to check clusters #####
-concept.op <- as.data.frame(data$intro.Operation)
-concept <- as.data.frame(unique(questions$concept))
-for (i in 1:nrow(concept)) {
-  # i <- 2
-  concept.this <- as.character(concept[ i, 1])
-  ## subset
-  scores.this <- scores.full[ !is.na(scores.full$scaled.score) & scores.full$concept == concept.this , ]
-
-  ## go from long to wide
-  scores.this.wide <- dcast(scores.this, operation  ~ newname, value.var = "scaled.score", sum)
-
-  ## put operation name as row.names
-  row.names(scores.this.wide ) <- scores.this.wide$operation
-  scores.this.wide$operation <- NULL
-
-
-  ## Compile the score for the concept
-  concept.op[ , i + 1] <- rowSums(scores.this.wide, na.rm = TRUE, dims = 1) / ncol(scores.this.wide)
-  ## scale it
-  #concept.op[ , i + 1] <- round(scale(concept.op[ , i + 1],
-  #                                   center = min(concept.op[ , i + 1]),
-  #                                   scale = max(concept.op[ , i + 1]) - min(concept.op[ , i + 1])) , 2)
-
-
-  names(concept.op)[i + 1] <- concept.this
-
-
-  ##
-  assign(  paste("scores.", concept.this, sep = ""), scores.this.wide )
-  rm(scores.this, concept.this,scores.this.wide )
-}
-
-
-
-## get a vector with subregion for representation
-subregion <- as.data.frame(data[order(data$intro.Operation), c("intro.SubRegion")])
-names(subregion)[1] <- "subregion"
+# ### Compile summary score per sector
+#
+# themes.op <- as.data.frame(data$intro.Operation)
+# themes <- as.data.frame(unique(questions$theme))
+# for (i in 1:nrow(themes)) {
+#   # i <- 2
+#   theme.this <- as.character(themes[ i, 1])
+#   ## subset
+#   scores.this <- scores.full[ !is.na(scores.full$scaled.score) & scores.full$theme == theme.this , ]
+#
+#   ## go from long to wide
+#   scores.this.wide <- dcast(scores.this, operation  ~ newname, value.var = "scaled.score", sum)
+#
+#   ## put operation name as row.names
+#   row.names(scores.this.wide ) <- scores.this.wide$operation
+#   scores.this.wide$operation <- NULL
+#
+#   ## Compile the score for the theme
+#   themes.op[ , i + 1] <- rowSums(scores.this.wide, na.rm = TRUE, dims = 1)  / ncol(scores.this.wide)
+#   ## sclae it
+#   #themes.op[ , i + 1] <- round(scale(themes.op[ , i + 1],
+#   #                             center = min(themes.op[ , i + 1]),
+#   #                             scale = max(themes.op[ , i + 1]) - min(themes.op[ , i + 1])) , 2)
+#   names(themes.op)[i + 1] <- theme.this
+#
+#   ## save with different name
+#   assign(  paste("scores.", theme.this, sep = ""), scores.this.wide )
+#   rm(scores.this, theme.this,scores.this.wide )
+#
+# }
+#
+#
+# ##### Step : subsetting by concept to check clusters #####
+# concept.op <- as.data.frame(data$intro.Operation)
+# concept <- as.data.frame(unique(questions$concept))
+# for (i in 1:nrow(concept)) {
+#   # i <- 2
+#   concept.this <- as.character(concept[ i, 1])
+#   ## subset
+#   scores.this <- scores.full[ !is.na(scores.full$scaled.score) & scores.full$concept == concept.this , ]
+#
+#   ## go from long to wide
+#   scores.this.wide <- dcast(scores.this, operation  ~ newname, value.var = "scaled.score", sum)
+#
+#   ## put operation name as row.names
+#   row.names(scores.this.wide ) <- scores.this.wide$operation
+#   scores.this.wide$operation <- NULL
+#
+#
+#   ## Compile the score for the concept
+#   concept.op[ , i + 1] <- rowSums(scores.this.wide, na.rm = TRUE, dims = 1) / ncol(scores.this.wide)
+#   ## scale it
+#   #concept.op[ , i + 1] <- round(scale(concept.op[ , i + 1],
+#   #                                   center = min(concept.op[ , i + 1]),
+#   #                                   scale = max(concept.op[ , i + 1]) - min(concept.op[ , i + 1])) , 2)
+#
+#
+#   names(concept.op)[i + 1] <- concept.this
+#
+#
+#   ##
+#   assign(  paste("scores.", concept.this, sep = ""), scores.this.wide )
+#   rm(scores.this, concept.this,scores.this.wide )
+# }
+#
+#
+#
+# ## get a vector with subregion for representation
+# subregion <- as.data.frame(data[order(data$intro.Operation), c("intro.SubRegion")])
+# names(subregion)[1] <- "subregion"
 
