@@ -100,7 +100,7 @@ library(readxl)
 questions <- read_excel("data/form.xls", sheet = "survey")
 #names(questions)
 ## Subset themes & concept
-questions <- questions[ !(is.na(questions$theme)) , c("name", "theme", "concept",  "sign"  )]
+questions <- questions[ !(is.na(questions$theme)) , c("name", "theme", "concept",  "sign", "rbm"  )]
 
 ## merge with dico to obtain the full variable name
 questions <- merge( x = questions, y = dico[dico$type %in% c("select_multiple_d", "select_one") ,
